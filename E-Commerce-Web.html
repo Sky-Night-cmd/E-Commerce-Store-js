@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E-Commerce</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      transition: 0.3s ease;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0a0a0a;
+      color: #0ff;
+      padding: 1rem;
+    }
+
+    h1, h2, h3 {
+      color: cyan;
+      margin-top: 0;
+    }
+
+    nav {
+      background: #111;
+      padding: 15px;
+      text-align: center;
+      border-radius: 10px;
+      margin-bottom: 2rem;
+      box-shadow: 0 0 12px #0ff;
+    }
+
+    nav a {
+      color: #0ff;
+      margin: 0 15px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    nav a:hover {
+      text-shadow: 0 0 10px cyan;
+      text-decoration: underline;
+    }
+
+    section {
+      display: none;
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    section.active {
+      display: block;
+    }
+
+    form, .product, .cart-item, .detail-box {
+      background: #111;
+      padding: 1.2rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 0 12px #0ff4;
+    }
+
+    input, button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: none;
+      outline: none;
+    }
+
+    input {
+      background: #222;
+      color: #0ff;
+    }
+
+    button {
+      background-color: cyan;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #00e0e0;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    #productList {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .product img {
+      max-width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      box-shadow: 0 0 8px #0ff4;
+    }
+
+    .product:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 16px #0ff;
+    }
+
+    .detail-box {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .detail-box img {
+      width: 300px;
+      height: 300px;
+      object-fit: cover;
+      border-radius: 12px;
+      box-shadow: 0 0 20px cyan;
+    }
+
+    .detail-info {
+      max-width: 500px;
+    }
+
+    @media (max-width: 600px) {
+      nav a {
+        display: block;
+        margin: 10px 0;
+      }
+
+      .detail-box {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1 class="center">E-Commerce Store</h1>
+
+  <nav>
+    <a href="#" onclick="show('home')">Home</a>
+    <a href="#" onclick="show('login')">Login</a>
+    <a href="#" onclick="show('signup')">Signup</a>
+    <a href="#" onclick="requireLogin(() => show('products'))">Products</a>
+    <a href="#" onclick="requireLogin(() => { renderCart(); show('cart'); })">Cart</a>
+    <a href="#" onclick="requireLogin(() => show('checkout'))">Checkout</a>
+    <a href="#" onclick="requireLogin(() => { renderProfile(); show('profile'); })">Profile</a>
+  </nav>
+
+  <section id="home" class="active">
+    <h2>Welcome to The Shop</h2>
+    <p>Explore the latest tech. Login or Signup to start shopping!</p>
+  </section>
+
+  <section id="login">
+    <form id="loginForm">
+      <h2>Login</h2>
+      <input id="loginUsername" placeholder="Username" required />
+      <input id="loginPassword" type="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+  </section>
+
+  <section id="signup">
+    <form id="signupForm">
+      <h2>Signup</h2>
+      <input id="signupUsername" placeholder="Username" required />
+      <input id="signupPassword" type="password" placeholder="Password" required />
+      <input id="signupName" placeholder="Full Name" required />
+      <button type="submit">Sign Up</button>
+    </form>
+  </section>
+
+  <section id="products">
+    <h2>Our Products</h2>
+    <div id="productList"></div>
+  </section>
+
+  <section id="productDetail">
+    <div class="detail-box" id="detailBox"></div>
+    <button onclick="show('products')">← Back to Products</button>
+  </section>
+
+  <section id="cart">
+    <h2>My Cart</h2>
+    <div id="cartItems"></div>
+  </section>
+
+  <section id="checkout">
+    <form id="checkoutForm">
+      <h2>Checkout</h2>
+      <input placeholder="Full Name" required />
+      <input placeholder="Shipping Address" required />
+      <input placeholder="Card Number" required />
+      <button type="submit">Place Order</button>
+    </form>
+  </section>
+
+  <section id="profile">
+    <h2>Profile</h2>
+    <div id="profileInfo"></div>
+    <button onclick="logout()">Logout</button>
+  </section>
+
+  <script>
+    const show = (id) => {
+      document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    };
+
+    const requireLogin = (cb) => {
+      const user = JSON.parse(localStorage.getItem("currentUser"));
+      if (!user) {
+        alert("Please login first.");
+        show("login");
+      } else cb();
+    };
+
+    const products = [
+      { id: 1, name: "Smartphone X1", desc: "Flagship phone with 108MP camera", price: 999, img: "img/store-1.jpg" },
+      { id: 2, name: "Laptop Pro 15", desc: "Ultra-fast laptop for professionals", price: 1499, img: "img/store-2.jpg" },
+      { id: 3, name: "Noise-Canceling Headphones", desc: "Crystal clear sound", price: 249, img: "img/store-3.jpg" },
+      { id: 4, name: "Fitness Smartwatch", desc: "Track your health and steps", price: 199, img: "img/store-4.jpg" },
+      { id: 5, name: "Gaming Mouse", desc: "RGB wired high DPI mouse", price: 59, img: "img/store-5.jpg" },
+      { id: 6, name: "Mechanical Keyboard", desc: "Tactile backlit keys", price: 99, img: "img/store-6.jpg" },
+      { id: 7, name: "4K Monitor", desc: "Ultra HD display with HDR", price: 329, img: "img/store-7.jpg" },
+      { id: 8, name: "Portable Speaker", desc: "Bass boosted Bluetooth speaker", price: 89, img: "img/store-8.jpg" },
+      { id: 9, name: "Drone Mini", desc: "Easy to fly drone with HD cam", price: 179, img: "img/store-9.jpg" },
+      { id: 10, name: "External SSD 1TB", desc: "Fast Type-C storage", price: 139, img: "img/store-10.jpg" },
+      { id: 11, name: "Wireless Charger Pad", desc: "Fast charging for all devices", price: 49, img: "img/store-11.jpg" },
+      { id: 12, name: "VR Headset", desc: "Virtual Reality immersive gaming", price: 299, img: "img/store-12.jpg" },
+      { id: 13, name: "Smart Home Hub", desc: "Control lights and devices", price: 119, img: "img/store-13.jpg" },
+      { id: 14, name: "Mini Projector", desc: "Cinematic viewing anywhere", price: 189, img: "img/store-14.jpg" },
+      { id: 15, name: "Electric Toothbrush", desc: "Smart timer and pressure sensor", price: 79, img: "img/store-15.jpg" },
+      { id: 16, name: "Smart Desk Lamp", desc: "Touch control with wireless charging", price: 69, img: "img/store-16.jpg" }
+    ];
+    localStorage.setItem("products", JSON.stringify(products));
+
+    const renderProducts = () => {
+      const list = document.getElementById("productList");
+      const data = JSON.parse(localStorage.getItem("products")) || [];
+      list.innerHTML = data.map(p => `
+        <div class="product">
+          <img src="${p.img}" alt="${p.name}" />
+          <h3>${p.name}</h3>
+          <p>${p.desc}</p>
+          <p><strong>$${p.price}</strong></p>
+          <button onclick="viewProduct(${p.id})">View Details</button>
+        </div>
+      `).join("");
+    };
+
+    const viewProduct = (id) => {
+      const p = JSON.parse(localStorage.getItem("products")).find(x => x.id === id);
+      const box = document.getElementById("detailBox");
+      box.innerHTML = `
+        <img src="${p.img}" alt="${p.name}" />
+        <div class="detail-info">
+          <h2>${p.name}</h2>
+          <p>${p.desc}</p>
+          <p><strong>Price: $${p.price}</strong></p>
+          <button onclick="addToCart(${p.id})">Add to Cart</button>
+        </div>
+      `;
+      show("productDetail");
+    };
+
+    const addToCart = (id) => {
+      const product = JSON.parse(localStorage.getItem("products")).find(p => p.id === id);
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const exists = cart.find(i => i.id === id);
+      exists ? exists.qty++ : cart.push({ ...product, qty: 1 });
+      localStorage.setItem("cart", JSON.stringify(cart));
+      renderCart();
+      alert(`${product.name} added to cart.`);
+    };
+
+    const renderCart = () => {
+      const cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const c = document.getElementById("cartItems");
+      c.innerHTML = cart.length === 0 ? "<p>Your cart is empty.</p>" : cart.map((item, i) => `
+        <div class="cart-item">
+          <h3>${item.name}</h3>
+          Quantity: ${item.qty}<br>
+          Total: $${item.qty * item.price}<br>
+          <button onclick="changeQty(${i}, 1)">+</button>
+          <button onclick="changeQty(${i}, -1)">–</button>
+          <button onclick="removeFromCart(${i})">Remove</button>
+        </div>
+      `).join("");
+    };
+
+    const changeQty = (i, d) => {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      cart[i].qty += d;
+      if (cart[i].qty <= 0) cart.splice(i, 1);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      renderCart();
+    };
+
+    const removeFromCart = (i) => {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      cart.splice(i, 1);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      renderCart();
+    };
+
+    const renderProfile = () => {
+      const user = JSON.parse(localStorage.getItem("currentUser"));
+      const box = document.getElementById("profileInfo");
+      box.innerHTML = user ? `<p><strong>Name:</strong> ${user.name}</p><p><strong>Username:</strong> ${user.username}</p>` : "<p>Please login.</p>";
+    };
+
+    const logout = () => {
+      localStorage.removeItem("currentUser");
+      alert("Logged out.");
+      show("login");
+    };
+
+    document.getElementById("signupForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const u = signupUsername.value.trim();
+      const p = signupPassword.value.trim();
+      const n = signupName.value.trim();
+      let users = JSON.parse(localStorage.getItem("users")) || [];
+      if (users.find(x => x.username === u)) return alert("Username taken.");
+      users.push({ username: u, password: p, name: n });
+      localStorage.setItem("users", JSON.stringify(users));
+      alert("Signup successful. Please login.");
+      show("login");
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const u = loginUsername.value.trim();
+      const p = loginPassword.value.trim();
+      const users = JSON.parse(localStorage.getItem("users")) || [];
+      const user = users.find(x => x.username === u && x.password === p);
+      if (!user) return alert("Invalid login.");
+      localStorage.setItem("currentUser", JSON.stringify(user));
+      renderProfile();
+      alert("Login successful.");
+      show("profile");
+    });
+
+    document.getElementById("checkoutForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const total = cart.reduce((t, i) => t + i.price * i.qty, 0);
+      alert(`Order placed! Total: $${total}`);
+      localStorage.removeItem("cart");
+      renderCart();
+      show("home");
+    });
+
+    renderProducts();
+    renderCart();
+    renderProfile();
+  </script>
+</body>
+</html>
